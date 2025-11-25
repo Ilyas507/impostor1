@@ -1,105 +1,24 @@
-const socket = io();
-let currentRoom = null;
-let myRole = null;
-
-// Elementos DOM
-const menu = document.getElementById('menu');
-const lobby = document.getElementById('lobby');
-const game = document.getElementById('game');
-const errorEl = document.getElementById('error');
-
-// Crear sala
-document.getElementById('createRoom').addEventListener('click', () => {
-  const name = document.getElementById('playerName').value;
-  if (name) socket.emit('createRoom', name);
-});
-
-socket.on('roomCreated', (code) => {
-  currentRoom = code;
-  document.getElementById('currentRoomCode').textContent = code;
-  menu.classList.add('hidden');
-  lobby.classList.remove('hidden');
-});
-
-// Unirse
-document.getElementById('joinRoom').addEventListener('click', () => {
-  const code = document.getElementById('roomCode').value.toUpperCase();
-  const name = document.getElementById('playerName').value;
-  if (code && name) socket.emit('joinRoom', code, name);
-});
-
-socket.on('joinedRoom', (code) => {
-  currentRoom = code;
-  document.getElementById('currentRoomCode').textContent = code;
-  menu.classList.add('hidden');
-  lobby.classList.remove('hidden');
-});
-
-socket.on('error', (msg) => {
-  errorEl.textContent = msg;
-  errorEl.classList.remove('hidden');
-});
-
-// Actualizar lista de jugadores
-socket.on('updatePlayers', (players) => {
-  const list = document.getElementById('playersList');
-  list.innerHTML = players.map(p => `<p>${p.name} (${p.role})</p>`).join('');
-});
-
-// Iniciar juego
-document.getElementById('startGame').addEventListener('click', () => {
-  socket.emit('startGame', currentRoom);
-});
-
-socket.on('gameStarted', (players) => {
-  lobby.classList.add('hidden');
-  game.classList.remove('hidden');
-  const me = players.find(p => p.id === socket.id);
-  myRole = me.role;
-  document.getElementById('role').textContent = `Tu rol: ${myRole}`;
-});
-
-// Chat
-document.getElementById('sendMessage').addEventListener('click', () => {
-  const msg = document.getElementById('messageInput').value;
-  if (msg) {
-    socket.emit('sendMessage', currentRoom, msg);
-    document.getElementById('messageInput').value = '';
-  }
-});
-
-socket.on('newMessage', (data) => {
-  const messages = document.getElementById('messages');
-  messages.innerHTML += `<p><strong>${data.sender}:</strong> ${data.message}</p>`;
-  messages.scrollTop = messages.scrollHeight;
-});
-
-// Votación
-document.getElementById('emergency').addEventListener('click', () => {
-  socket.emit('startVote', currentRoom);
-});
-
-socket.on('votingStarted', () => {
-  document.getElementById('vote').classList.remove('hidden');
-  // Generar botones de votación (simplificado)
-  const buttons = document.getElementById('voteButtons');
-  buttons.innerHTML = '<button class="voteBtn bg-red-500 p-2 m-1 rounded" data-id="skip">Saltar</button>';
-  // Agrega botones para cada jugador (necesitas obtener lista actualizada)
-});
-
-// Ejemplo de votar (ajusta para botones dinámicos)
-document.addEventListener('click', (e) => {
-  if (e.target.classList.contains('voteBtn')) {
-    const votedId = e.target.dataset.id;
-    socket.emit('vote', currentRoom, votedId);
-  }
-});
-
-socket.on('updateVotes', (votes) => {
-  console.log('Votos actualizados:', votes);
-});
-
-socket.on('voteResult', (expelledId) => {
-  alert(`Jugador expulsado: ${expelledId}`);
-  document.getElementById('vote').classList.add('hidden');
-});
+:root{--bg:#0b1020;--card:#0f1724;--accent:#6B5DFB;--muted:#9aa3ff}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter, system-ui, Arial;background:linear-gradient(180deg,var(--bg),#051025);color:#eef2ff}
+.app{display:flex;gap:18px;padding:28px;max-width:1200px;margin:0 auto}
+.card{background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);padding:16px;border-radius:14px;box-shadow:0 8px 30px rgba(2,6,23,0.6)}
+.sidebar{width:320px}
+.sidebar h1{margin:0 0 6px}
+.muted{color:var(--muted);margin:0 0 12px}
+label{display:block;font-size:0.85rem;margin-top:8px;color:var(--muted)}
+input,select{width:100%;padding:10px;border-radius:10px;border:none;background:#071225;color:#fff;margin-top:6px}
+.row{display:flex;gap:8px;margin-top:12px}
+button{background:var(--accent);border:none;color:white;padding:10px 12px;border-radius:10px;cursor:pointer}
+button.secondary{background:transparent;border:1px solid rgba(255,255,255,0.06)}
+.board{flex:1}
+.board-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.roleBox{margin-top:6px;color:var(--muted)}
+.main-grid{display:grid;grid-template-columns:220px 1fr 300px;gap:12px}
+.players.small{padding:12px}
+#playersContainer div{padding:6px;border-radius:8px;margin-bottom:6px;background:rgba(255,255,255,0.02)}
+.chat{display:flex;flex-direction:column}
+#chatBox{height:320px;overflow:auto;padding:8px;background:rgba(0,0,0,0.12);border-radius:8px}
+.chat-input{display:flex;gap:8px;margin-top:8px}
+.timer{font-size:1.4rem;margin-top:8px}
+@media(max-width:980px){.app{flex-direction:column;padding:12px}.main-grid{grid-template-columns:1fr}}
